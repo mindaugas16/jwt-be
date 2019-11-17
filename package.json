@@ -1,0 +1,28 @@
+{
+  "name": "jwt-be",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
+    "ts-node": "^8.5.2",
+    "tsconfig-paths": "^3.9.0",
+    "typescript": "^3.7.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.2",
+    "backend-tslint-rules": "^1.14.0",
+    "nodemon": "^1.19.4",
+    "tslint": "^5.20.1"
+  },
+  "scripts": {
+    "start": "ts-node -r tsconfig-paths/register src/app.ts",
+    "start:watch": "nodemon src/app.ts"
+  },
+  "author": "",
+  "license": "ISC"
+}
