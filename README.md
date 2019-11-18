@@ -16,3 +16,21 @@ Make sure that mongoDB is running.
 $ npm run start:watch
 ```
 
+# Endpoints
+
+#### [POST] Register `/api/register`
+Request body:
+```bash
+{
+    "email": string,
+    "password": string
+}
+```
+#### [POST] Login `/api/login`
+Request body:
+```bash
+{
+    "email": string,
+    "password": string
+}
+```
