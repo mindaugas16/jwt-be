@@ -2,9 +2,9 @@ import dotenv from 'dotenv';
 import express from 'express';
 import bodyParser = require('body-parser');
 import routes from './routes';
-import cors from "./middlerware/cors";
-import errorHandler from "./middlerware/cors";
-import http from "http";
+import cors from './middlerware/cors';
+import errorHandler from './middlerware/error-handler';
+import http from 'http';
 import mongoose from 'mongoose';
 
 const app = express();
@@ -18,7 +18,6 @@ app.use(cors);
 app.use('/api', routes);
 
 app.use(errorHandler);
-
 
 mongoose
     .connect(
@@ -38,4 +37,3 @@ mongoose
     .catch(error => {
         throw error;
     });
-
