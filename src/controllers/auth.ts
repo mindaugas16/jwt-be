@@ -38,13 +38,13 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     }
 
     if (!isEmail(email)) {
-        return next(new StatusError('Invalid email', 422));
+        return next(new StatusError('Invalid email', 400));
     }
 
     const user = await User.findOne({ email });
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
-        return next(new StatusError('Wrong user or password', 422));
+        return next(new StatusError('Wrong user or password', 400));
     }
 
     return res.send({ token: generateJWT(user) });
@@ -64,13 +64,13 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     }
 
     if (errors.length) {
-        return next(new StatusError('Invalid input', 422, errors));
+        return next(new StatusError('Invalid input', 400, errors));
     }
 
     const user = await User.findOne({ email });
 
     if (user) {
-        return next(new StatusError('User already exists', 422));
+        return next(new StatusError('User already exists', 400));
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);

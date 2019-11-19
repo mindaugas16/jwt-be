@@ -2,10 +2,11 @@ import dotenv from 'dotenv';
 import express from 'express';
 import bodyParser = require('body-parser');
 import routes from './routes';
-import cors from './middlerware/cors';
-import errorHandler from './middlerware/error-handler';
+import cors from './middleware/cors';
+import errorHandler from './middleware/error-handler';
 import http from 'http';
 import mongoose from 'mongoose';
+import AuthMiddleware from './middleware/auth';
 
 const app = express();
 
@@ -13,6 +14,7 @@ dotenv.config();
 
 app.use(bodyParser.json());
 
+app.use(AuthMiddleware.setAuth);
 app.use(cors);
 
 app.use('/api', routes);
