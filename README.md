@@ -34,3 +34,11 @@ Request body:
     "password": string
 }
 ```
+
+#### [GET] Login `/api/info`
+Response body:
+```bash
+{
+    "message": string
+}
+```
