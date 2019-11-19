@@ -39,6 +39,6 @@ Request body:
 Response body:
 ```bash
 {
-    "message": string
+    "superSecretMessage": string
 }
 ```

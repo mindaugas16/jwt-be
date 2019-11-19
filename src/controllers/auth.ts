@@ -34,18 +34,43 @@ const generateJWT = (user: UserInterface) =>
 export const login = async (req: Request, res: Response, next: NextFunction) => {
   const { email, password } = req.body as UserInterface;
 
+  const errors: RegistrationError[] = [];
+
   if ((req as any).isAuth) {
     return next(new StatusError('Authentication required', 401));
   }
 
+  if (!email) {
+    errors.push({
+      field: 'email',
+      type: 'isRequired',
+      message: 'Email is required'
+    });
+  }
+  if (!password) {
+    errors.push({
+      field: 'password',
+      type: 'isRequired',
+      message: 'Password is required'
+    });
+  }
+
   if (!isEmail(email)) {
-    return next(new StatusError('Invalid email', 400));
+    errors.push({
+      field: 'email',
+      type: 'invalidEmail',
+      message: 'Invalid email'
+    });
+  }
+
+  if (errors.length) {
+    return next(new StatusError('Invalid input', 400, errors));
   }
 
   const user = await User.findOne({ email });
 
   if (!user || !(await bcrypt.compare(password, user.password))) {
-    return next(new StatusError('Wrong user or password', 400));
+    return next(new StatusError('Wrong email or password', 400));
   }
 
   return res.send({ token: generateJWT(user) });
@@ -55,6 +80,14 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
   const { email, password } = req.body as UserInterface;
 
   const errors: RegistrationError[] = [];
+
+  if (!email) {
+    errors.push({
+      field: 'email',
+      type: 'isRequired',
+      message: 'Email is required'
+    });
+  }
 
   if (!isEmail(email)) {
     errors.push({
