@@ -1,105 +1,84 @@
 import * as bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import User from '../models/user';
+import User, { UserInterface } from '../models/user';
 import isEmail = require('validator/lib/isEmail');
+import { Request, Response, NextFunction } from 'express';
 
 const tokenExpiresIn = 3; // hours
 
-const generateJWT = user =>
-  jwt.sign(
-    { userId: user.id, email: user.email },
-    process.env.JWT_SECRET_KEY,
-    { expiresIn: `${ tokenExpiresIn }h` }
-  );
+interface RegistrationError {
+    field: string;
+    type: string;
+    message: string;
+}
 
-export default {
-  login: (req, res, next) => {
-    const { email, password } = req.body;
+class StatusError extends Error {
+    statusCode: number;
+    data?: any;
 
-    if (req.isAuth || !isEmail(email)) {
-      const error = new Error('Invalid input') as any;
-      error.statusCode = 422;
+    constructor(message: string, statusCode: number, data?: any) {
+        super(message);
+        this.statusCode = statusCode;
+        this.data = data;
+    }
+}
 
-      return next(error);
+const generateJWT = (user: UserInterface) =>
+    jwt.sign(
+        { userId: user.id, email: user.email },
+        process.env.JWT_SECRET_KEY as string,
+        { expiresIn: `${tokenExpiresIn}h` }
+    );
+
+export const login = async (req: Request, res: Response, next: NextFunction) => {
+    const { email, password } = req.body as UserInterface;
+
+    if ((req as any).isAuth) {
+        return next(new StatusError('Authentication required', 401));
     }
 
-    User.findOne({ email })
-      .then(user => {
-        if (!user) {
-          const error = new Error('Invalid input') as any;
-          error.statusCode = 422;
+    if (!isEmail(email)) {
+        return next(new StatusError('Invalid email', 422));
+    }
 
-          return next(error);
-        }
+    const user = await User.findOne({ email });
 
-        bcrypt.compare(password, user.password)
-          .then((doesMatch: boolean) => {
-            if (doesMatch) {
-              return res
-                .status(200)
-                .send({
-                  userId: user.id,
-                  token: generateJWT(user),
-                  tokenExpiration: tokenExpiresIn
-                })
-            }
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+        return next(new StatusError('Wrong user or password', 422));
+    }
 
-            const error = new Error('Invalid input') as any;
-            error.statusCode = 422;
+    return res.send({ token: generateJWT(user) });
+};
 
-            return next(error);
-          })
-      })
-      .catch(err => next(err))
-  },
-  register: (req, res, next) => {
-    const { email, password } = req.body;
+export const register = async (req: Request, res: Response, next: NextFunction) => {
+    const { email, password } = req.body as UserInterface;
 
-    const errors: { field: string; type: string; message: string }[] = [];
+    const errors: RegistrationError[] = [];
 
     if (!isEmail(email)) {
-      errors.push({
-        field: 'email',
-        type: 'invalidEmail',
-        message: 'Invalid email'
-      });
+        errors.push({
+            field: 'email',
+            type: 'invalidEmail',
+            message: 'Invalid email'
+        });
     }
 
     if (errors.length) {
-      const error = new Error('Invalid input') as any;
-      error.data = errors;
-      error.statusCode = 422;
-
-      return next(error);
+        return next(new StatusError('Invalid input', 422, errors));
     }
 
-    User.findOne({ email })
-      .then(user => {
-        if (user) {
-          const error = new Error('User already exist') as any;
-          error.statusCode = 422;
+    const user = await User.findOne({ email });
 
-          return next(error);
-        }
+    if (user) {
+        return next(new StatusError('User already exists', 422));
+    }
 
-        return bcrypt.hash(password, 12);
-      })
-      .then(hashedPassword => {
-        const { password, ...rest } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 12);
 
-        return new User({
-          ...rest,
-          password: hashedPassword
-        }).save()
-      })
-      .then(result => {
-        res.json({
-          ...result._doc,
-          _id: result.id
-        })
-      })
-      .catch(err => {
-        next(err);
-      })
-  }
-}
+    const savedUser = await new User({
+        ...req.body,
+        password: hashedPassword
+    }).save();
+
+    res.json({ _id: savedUser.id });
+};
